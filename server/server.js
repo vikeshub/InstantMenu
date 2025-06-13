@@ -21,11 +21,13 @@ const corsOptions = {
 };
 app.use(cors(corsOptions)); // Apply CORS middleware
 
- 
-
 // Mount authentication routes
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes); // [12]
+
+// Restaurant public routes
+const restaurantRoutes = require('./routes/restaurantRoutes');
+app.use('/api/restaurant', restaurantRoutes);
 
 // Simple test route
 app.get('/', (req, res) => {

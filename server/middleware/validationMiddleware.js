@@ -1,4 +1,4 @@
-const { body, validationResult } = require('express-validator'); // [32, 43]
+const { body, validationResult } = require('express-validator'); 
 
 // Validation for user registration
 exports.validateRegistration = [
@@ -8,7 +8,7 @@ exports.validateRegistration = [
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() }); // [32]
+      return res.status(400).json({ errors: errors.array() }); 
     }
     next();
   },
