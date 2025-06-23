@@ -33,6 +33,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { API_LIST } from "../api/apiList";
 
 const outletTypes = [
   "Dine-In",
@@ -104,7 +105,7 @@ const RestaurantSignup = () => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        "http://localhost:3000/api/restaurant/register",
+        API_LIST.RESTAURANT_REGISTER,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -226,11 +227,45 @@ const RestaurantSignup = () => {
                     </Select>
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="logo_url" className="text-sm font-medium text-gray-700">Logo URL (Optional)</Label>
-                    <div className="relative">
-                      <Upload className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                      <Input id="logo_url" name="logo_url" type="url" value={form.logo_url} onChange={handleChange} className="h-11 pl-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500" placeholder="https://example.com/logo.png" />
+                    <Label htmlFor="logo_url" className="text-sm font-medium text-gray-700">Logo (Optional)</Label>
+                    <div className="flex gap-2 items-center">
+                      <div className="relative w-full">
+                        <Upload className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                        <Input id="logo_url" name="logo_url" type="url" value={form.logo_url} onChange={handleChange} className="h-11 pl-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500" placeholder="https://example.com/logo.png" />
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="logo_file"
+                        className="block w-36 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          try {
+                            const res = await fetch(`${API_DOMAIN}/api/upload`, {
+                              method: 'POST',
+                              body: formData,
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.imageUrl) {
+                              setForm(f => ({ ...f, logo_url: data.imageUrl }));
+                              toast({ title: 'Logo Uploaded', description: 'Logo uploaded successfully!', variant: 'default' });
+                            } else {
+                              toast({ title: 'Upload Error', description: data.error || 'Failed to upload logo', variant: 'destructive' });
+                            }
+                          } catch (err) {
+                            toast({ title: 'Upload Error', description: err.message, variant: 'destructive' });
+                          }
+                        }}
+                      />
                     </div>
+                    {form.logo_url && (
+                      <div className="mt-2">
+                        <img src={form.logo_url} alt="Logo Preview" className="h-16 rounded shadow border border-gray-200" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchRestaurantProfile, updateRestaurantProfile } from "../features/restaurant/restaurantSlice";
 import { Button } from "../components/ui/button";
 import RestaurantNavbar from '../components/layout/RestaurantNavbar';
+import { API_LIST } from "../api/apiList";
 
 const RestaurantProfile = () => {
   const dispatch = useDispatch();
@@ -75,6 +76,38 @@ const RestaurantProfile = () => {
               <input name="zip_code" value={form.zip_code || ''} onChange={handleChange} className="input" placeholder="Zip Code" />
               <input name="country" value={form.country || ''} onChange={handleChange} className="input" placeholder="Country" />
               <input name="logo_url" value={form.logo_url || ''} onChange={handleChange} className="input" placeholder="Logo URL" />
+              <input
+                type="file"
+                accept="image/*"
+                id="logo_file"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 mt-2"
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  const formData = new FormData();
+                  formData.append('file', file);
+                  try {
+                    const res = await fetch(`${API_LIST.API_DOMAIN}/api/upload`, {
+                      method: 'POST',
+                      body: formData,
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.imageUrl) {
+                      setForm(f => ({ ...f, logo_url: data.imageUrl }));
+                      // Optionally show a toast if you have a toast system
+                    } else {
+                      // Optionally show a toast for error
+                    }
+                  } catch (err) {
+                    // Optionally show a toast for error
+                  }
+                }}
+              />
+              {form.logo_url && (
+                <div className="mt-2">
+                  <img src={form.logo_url} alt="Logo Preview" className="h-16 rounded shadow border border-gray-200" />
+                </div>
+              )}
               <div className="flex gap-2 mt-2">
                 <Button type="submit" className="bg-orange-600 text-white">Save</Button>
                 <Button type="button" variant="outline" onClick={() => setEditMode(false)}>Cancel</Button>
