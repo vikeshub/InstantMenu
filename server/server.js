@@ -12,9 +12,11 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bo
 app.use(cookieParser()); // Parse cookies // [31]
 
 // CORS configuration // [12, 41]
-// CORS configuration // [12, 41]
 const corsOptions = {
-  origin: process.env.CLIENT_URL || 'http://localhost:3000', // Allow requests from your frontend origin
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ], // Allow both Vite and backend ports for local dev
   credentials: true, // Allow cookies to be sent with requests
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers

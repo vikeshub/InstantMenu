@@ -129,3 +129,79 @@ exports.loginRestaurant = async (req, res) => {
     res.status(500).json({ message: 'Server error during login.' });
   }
 };
+
+// Get restaurant and owner info (protected route)
+exports.getRestaurantInfo = async (req, res) => {
+  try {
+    const Restaurant = require('../models/restaurant.model');
+    const User = require('../models/user.model');
+    // Only allow access to the logged-in restaurant owner
+    const userId = req.user.userId;
+    // Find the restaurant owned by this user
+    const restaurant = await Restaurant.findOne({ owner_id: userId });
+    if (!restaurant) {
+      return res.status(404).json({ message: 'Restaurant not found for this user.' });
+    }
+    // Find the user (owner)
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.json({ restaurant, user });
+  } catch (error) {
+    console.error('Get restaurant info error:', error);
+    res.status(500).json({ message: 'Server error while fetching restaurant info.' });
+  }
+};
+
+// Update restaurant and owner profile (protected route)
+exports.updateRestaurantProfile = async (req, res) => {
+  try {
+    const Restaurant = require('../models/restaurant.model');
+    const User = require('../models/user.model');
+    const userId = req.user.userId;
+    // Only allow update for the logged-in owner
+    const restaurant = await Restaurant.findOne({ owner_id: userId });
+    if (!restaurant) {
+      return res.status(404).json({ message: 'Restaurant not found for this user.' });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    // Update allowed fields
+    const {
+      owner_name,
+      outlet_name,
+      mobile_no,
+      outlet_type,
+      email,
+      state,
+      city,
+      address,
+      zip_code,
+      country,
+      logo_url
+    } = req.body;
+    // Update user fields
+    if (owner_name) user.name = owner_name;
+    if (email) user.email = email;
+    if (mobile_no) user.phone = mobile_no;
+    await user.save();
+    // Update restaurant fields
+    if (owner_name) restaurant.owner_name = owner_name;
+    if (outlet_name) restaurant.outlet_name = outlet_name;
+    if (outlet_type) restaurant.outlet_type = outlet_type;
+    if (address) restaurant.address = address;
+    if (city) restaurant.city = city;
+    if (state) restaurant.state = state;
+    if (zip_code) restaurant.zip_code = zip_code;
+    if (country) restaurant.country = country;
+    if (logo_url) restaurant.logo_url = logo_url;
+    await restaurant.save();
+    res.json({ message: 'Profile updated successfully.', restaurant, user });
+  } catch (error) {
+    console.error('Update restaurant profile error:', error);
+    res.status(500).json({ message: 'Server error while updating profile.' });
+  }
+};
