@@ -34,6 +34,7 @@ exports.authorizeRole = (allowedRoles) => {
 
     try {
       const user = await User.findById(req.user.userId).populate('role_id');
+
       if (!user ||!user.role_id) {
         return res.status(403).json({ message: 'Forbidden: User role not found.' });
       }
