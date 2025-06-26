@@ -12,5 +12,12 @@ export const API_LIST = {
   RESTAURANT_REGISTER: `${API_DOMAIN}/api/restaurant/register`,
   RESTAURANT_LOGIN: `${API_DOMAIN}/api/restaurant/login`,
   RESTAURANT_PROFILE: `${API_DOMAIN}/api/restaurant/profile`, // GET/PUT
+
+  // Menu APIs
+  MENUS_BY_RESTAURANT: (restaurantId) => `${API_DOMAIN}/api/menus/restaurant/${restaurantId}`,
+  ADD_MENU: `${API_DOMAIN}/api/menus`,
+  EDIT_MENU: (id) => `${API_DOMAIN}/api/menus/${id}`,
+  DELETE_MENU: (id) => `${API_DOMAIN}/api/menus/${id}`,
+  TOGGLE_MENU: (id) => `${API_DOMAIN}/api/menus/${id}/toggle-active`,
   // Add more endpoints as needed
 };

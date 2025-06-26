@@ -12,6 +12,8 @@ import { ChefHat, ArrowLeft } from "lucide-react";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { toast } from "../hooks/use-toast";
+import { useDispatch } from "react-redux";
+import { fetchRestaurantProfile } from "../features/restaurant/restaurantSlice";
 
 const RestaurantLogin = () => {
   const [form, setForm] = useState({
@@ -20,6 +22,7 @@ const RestaurantLogin = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -38,6 +41,7 @@ const RestaurantLogin = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Login failed");
       localStorage.setItem("restaurantAccessToken", data.accessToken);
+      dispatch(fetchRestaurantProfile());
       toast({
         title: "Login Successful",
         description: `Welcome, ${data.user.name}!`,

@@ -7,6 +7,7 @@ import RestaurantLanding from '../pages/RestaurantLanding';
 import RestaurantSignup from '../pages/RestaurantSignup';
 import RestaurantLogin from '../pages/RestaurantLogin';
 import RestaurantProfile from '../pages/RestaurantProfile';
+import RestaurantMenuPage from '../pages/RestaurantMenuPage';
 
 const AppRoutes = () => (
   <Router>
@@ -18,6 +19,7 @@ const AppRoutes = () => (
       <Route path="/restaurant/signup" element={<RestaurantSignup />} />
       <Route path="/restaurant/login" element={<RestaurantLogin />} />
       <Route path="/restaurant/profile" element={<RestaurantProfile />} />
+      <Route path="/restaurant/menu" element={<RestaurantMenuPage />} />
     </Routes>
   </Router>
 );
