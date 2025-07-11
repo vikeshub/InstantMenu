@@ -34,6 +34,8 @@ const MenuItemsPage = () => {
   const [addIsAvailable, setAddIsAvailable] = useState(true);
   const [addSpicyLevel, setAddSpicyLevel] = useState("Mild");
   const [addIngredients, setAddIngredients] = useState("");
+  const [addAddonName, setAddAddonName] = useState([]);
+  const [addAddonPrice, setAddAddonPrice] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editModalData, setEditModalData] = useState(null);
   const { toast } = useToast();
@@ -149,6 +151,49 @@ const MenuItemsPage = () => {
       setAddName("");
       setAddDesc("");
       setAddPrice("");
+    } catch (err) {
+      setAddError(err.message || 'Error adding menu item');
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  // Add menu item with form data (including addons)
+  const handleAddMenuItemWithData = async (formData) => {
+    if (!menuId) {
+      setAddError('Menu ID is missing. Cannot add menu item.');
+      return;
+    }
+    setAddLoading(true);
+    setAddError(null);
+    try {
+      const token = localStorage.getItem('restaurantAccessToken');
+      const res = await fetch(API_LIST.ADD_MENUITEM(menuId), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) throw new Error('Failed to add menu item');
+      const data = await res.json();
+      setItems((prev) => [...prev, data]);
+      setShowModal(false);
+      // Reset form
+      setAddName("");
+      setAddDesc("");
+      setAddPrice("");
+      setAddDiscountedPrice("");
+      setAddStatus("NoStatus");
+      setAddItemType("not-defined");
+      setAddImageUrl("");
+      setAddIsAvailable(true);
+      setAddSpicyLevel("Mild");
+      setAddIngredients("");
+      setAddAddonName([]);
+      setAddAddonPrice([]);
     } catch (err) {
       setAddError(err.message || 'Error adding menu item');
     } finally {
@@ -425,7 +470,7 @@ const MenuItemsPage = () => {
           <AddMenuItemModal
             show={showModal}
             onClose={() => setShowModal(false)}
-            onSubmit={handleAddMenuItem}
+            onSubmit={handleAddMenuItemWithData}
             addName={addName}
             setAddName={setAddName}
             addDesc={addDesc}
@@ -446,6 +491,8 @@ const MenuItemsPage = () => {
             setAddSpicyLevel={setAddSpicyLevel}
             addIngredients={addIngredients}
             setAddIngredients={setAddIngredients}
+            addonName={addAddonName}
+            addonPrice={addAddonPrice}
             addLoading={addLoading}
             addError={addError}
           />
@@ -479,7 +526,7 @@ const MenuItemsPage = () => {
           <AddMenuItemModal
             show={editModalOpen}
             onClose={() => { setEditModalOpen(false); setEditModalData(null); }}
-            onSubmit={e => { e.preventDefault(); handleEditModalSave(editModalData); }}
+            onSubmit={handleEditModalSave}
             addName={editModalData.name}
             setAddName={val => setEditModalData(d => ({ ...d, name: val }))}
             addDesc={editModalData.description}
@@ -500,6 +547,14 @@ const MenuItemsPage = () => {
             setAddSpicyLevel={val => setEditModalData(d => ({ ...d, spicy_level: val }))}
             addIngredients={editModalData.ingredients ? editModalData.ingredients.join(', ') : ''}
             setAddIngredients={val => setEditModalData(d => ({ ...d, ingredients: val.split(',').map(s => s.trim()) }))}
+            addonName={editModalData.addons ? editModalData.addons.map(addon => String(addon.name || '')) : []}
+            addonPrice={editModalData.addons ? editModalData.addons.map(addon => {
+              // Handle MongoDB Decimal128 format for prices
+              if (addon.price && addon.price.$numberDecimal) {
+                return String(addon.price.$numberDecimal);
+              }
+              return String(addon.price || '');
+            }) : []}
             addLoading={false}
             addError={null}
             isEditMode={true}
