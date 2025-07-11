@@ -19,5 +19,11 @@ export const API_LIST = {
   EDIT_MENU: (id) => `${API_DOMAIN}/api/menus/${id}`,
   DELETE_MENU: (id) => `${API_DOMAIN}/api/menus/${id}`,
   TOGGLE_MENU: (id) => `${API_DOMAIN}/api/menus/${id}/toggle-active`,
+  // Menu Item APIs
+  MENUITEMS_BY_MENU: (menuId) => `${API_DOMAIN}/api/menuitems/menu/${menuId}`,
+  GET_MENUITEM: (itemId) => `${API_DOMAIN}/api/menuitems/${itemId}`,
+  ADD_MENUITEM: (menuId) => `${API_DOMAIN}/api/menuitems/${menuId}`,
+  UPDATE_MENUITEM: (menuId, itemId) => `${API_DOMAIN}/api/menuitems/${menuId}/${itemId}`,
+  DELETE_MENUITEM: (menuId, itemId) => `${API_DOMAIN}/api/menuitems/${menuId}/${itemId}`,
   // Add more endpoints as needed
 };

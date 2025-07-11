@@ -3,6 +3,8 @@ import { useSelector } from 'react-redux';
 import RestaurantNavbar from '../components/layout/RestaurantNavbar';
 import { Pencil, Trash2 } from 'lucide-react';
 import { API_LIST, API_DOMAIN } from '../api/apiList';
+import { useNavigate } from 'react-router-dom';
+import MenuItemsPage from './RestaurantMenuItemsPage';
 
 const RestaurantMenuPage = () => {
   const [menus, setMenus] = useState([]);
@@ -21,6 +23,7 @@ const RestaurantMenuPage = () => {
   const [deleteError, setDeleteError] = useState(null);
   const titleRef = useRef();
   const descRef = useRef();
+  const navigate = useNavigate();
 
   // Get restaurant ID from Redux if available, else from localStorage
   const restaurantProfile = useSelector(state => state.restaurant?.profile || state.restaurant?.restaurant);
@@ -244,13 +247,24 @@ const RestaurantMenuPage = () => {
                 <tbody className="bg-white divide-y divide-gray-100">
                   {menus.map((menu) => (
                     <tr key={menu._id}>
-                      <td className="px-4 py-3 font-semibold text-gray-900">
+                      <td
+                        className={`px-4 py-3 font-semibold text-gray-900${editId === menu._id ? '' : ' cursor-pointer hover:underline'}`}
+                        onClick={editId === menu._id ? undefined : (e) => {
+                          // Only trigger navigation if the click is on the cell itself, not on any child element (like input)
+                          const isDirectCellClick = e.target === e.currentTarget;
+                          if (!isDirectCellClick) return;
+                          navigate(`/restaurant/menus/${menu._id}`);
+                        }}
+                        title={editId === menu._id ? undefined : 'View menu items'}
+                        style={{ userSelect: editId === menu._id ? 'auto' : 'none' }}
+                      >
                         {editId === menu._id ? (
                           <input
                             value={editTitle}
                             onChange={e => setEditTitle(e.target.value)}
                             className="border border-gray-300 rounded px-2 py-1 w-full"
                             disabled={editLoading}
+                            tabIndex={0}
                           />
                         ) : (
                           menu.title

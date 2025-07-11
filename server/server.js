@@ -32,6 +32,14 @@ app.use('/api/restaurant', restaurantRoutes);
 const menuRoutes = require('./routes/menuRoutes');
 app.use('/api/menus', menuRoutes);
 
+// Mount menuitem routes
+const menuitemRoutes = require('./routes/menuitemRoutes');
+app.use('/api/menuitems', menuitemRoutes);
+
+// Mount upload routes
+const uploadRoute = require('./routes/uploadRoute');
+app.use('/api', uploadRoute);
+
 // Simple test route
 app.get('/', (req, res) => {
   res.send('Welcome to the InstantMenu API!');

@@ -6,6 +6,8 @@ import { Button } from "../components/ui/button";
 import RestaurantNavbar from '../components/layout/RestaurantNavbar';
 import { API_LIST } from "../api/apiList";
 
+const API_UPLOAD_URL = 'http://localhost:3000/api/upload';
+
 const RestaurantProfile = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -87,19 +89,22 @@ const RestaurantProfile = () => {
                   const formData = new FormData();
                   formData.append('file', file);
                   try {
-                    const res = await fetch(`${API_LIST.API_DOMAIN}/api/upload`, {
+                    const token = localStorage.getItem('restaurantAccessToken');
+                    const res = await fetch(API_UPLOAD_URL, {
                       method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                      },
                       body: formData,
                     });
                     const data = await res.json();
                     if (res.ok && data.imageUrl) {
                       setForm(f => ({ ...f, logo_url: data.imageUrl }));
-                      // Optionally show a toast if you have a toast system
                     } else {
-                      // Optionally show a toast for error
+                      alert(data.error || 'Upload failed');
                     }
                   } catch (err) {
-                    // Optionally show a toast for error
+                    alert('Upload failed: ' + err.message);
                   }
                 }}
               />
