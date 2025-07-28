@@ -25,5 +25,6 @@ export const API_LIST = {
   ADD_MENUITEM: (menuId) => `${API_DOMAIN}/api/menuitems/${menuId}`,
   UPDATE_MENUITEM: (menuId, itemId) => `${API_DOMAIN}/api/menuitems/${menuId}/${itemId}`,
   DELETE_MENUITEM: (menuId, itemId) => `${API_DOMAIN}/api/menuitems/${menuId}/${itemId}`,
+  DELETE_ADDON: (menuId, itemId, addonIndex) => `${API_DOMAIN}/api/menuitems/${menuId}/${itemId}/addons/${addonIndex}`,
   // Add more endpoints as needed
 };

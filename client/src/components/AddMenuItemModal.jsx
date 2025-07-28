@@ -10,6 +10,10 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
 import { Button } from "./ui/button";
+import { MdArrowDropDown } from "react-icons/md";
+import { IoMdArrowDropup } from "react-icons/io";
+import { API_LIST } from "../api/apiList";
+import { toast } from "../hooks/use-toast";
 
 const AddMenuItemModal = ({
   show,
@@ -39,11 +43,99 @@ const AddMenuItemModal = ({
   setAddIngredients,
   addonName = [],
   addonPrice = [],
-  isEditMode = false
+  isEditMode = false,
+  menuId = null,
+  itemId = null,
+  onAddonDeleted = null
 }) => {
   const fileInputRef = React.useRef(null);
   const [addonsList, setAddonsList] = React.useState([]);
   const [showAdvanced, setShowAdvanced] = React.useState(false);
+  const [originalAddonCount, setOriginalAddonCount] = React.useState(0);
+
+  // Function to handle delete addon API call
+  const handleDeleteAddon = async (addonId) => {
+    // Find the addon by ID
+    const addonIndex = addonsList.findIndex(addon => addon.id === addonId);
+    if (addonIndex === -1) {
+      console.error('Addon not found:', addonId);
+      return;
+    }
+
+    const addon = addonsList[addonIndex];
+    
+    console.log('Delete addon:', {
+      addonId,
+      addonIndex,
+      originalAddonCount,
+      isLocalAddon: addon.isLocal,
+      totalAddons: addonsList.length
+    });
+    
+    if (addon.isLocal) {
+      // This is a local addon that hasn't been saved yet, just remove from local state
+      setAddonsList(prev => prev.filter(a => a.id !== addonId));
+      toast({
+        title: "Success",
+        description: "Addon removed from form",
+        variant: "default",
+      });
+      return;
+    }
+
+    // This is a database addon, need to call API
+    if (!menuId || !itemId) {
+      toast({
+        title: "Error",
+        description: "Menu ID or Item ID is missing. Cannot delete addon.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('restaurantAccessToken');
+      const response = await fetch(API_LIST.DELETE_ADDON(menuId, itemId, addon.dbIndex), {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete addon');
+      }
+
+      const result = await response.json();
+      
+      // Update the local addons list by removing the deleted addon
+      setAddonsList(prev => prev.filter(a => a.id !== addonId));
+      
+      toast({
+        title: "Success",
+        description: "Addon deleted successfully",
+        variant: "default",
+      });
+
+      // If this is edit mode and we have a callback to refresh the parent data
+      if (isEditMode && result.item) {
+        // Call the callback to update the parent component
+        if (onAddonDeleted) {
+          onAddonDeleted(result.item);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting addon:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete addon",
+        variant: "destructive",
+      });
+    }
+  };
 
     // Sync addons with parent data
   React.useEffect(() => {
@@ -51,14 +143,22 @@ const AddMenuItemModal = ({
       const newAddonsList = addonName.map((name, idx) => {
         const price = addonPrice[idx];
         return { 
+          id: `addon-${idx}`, // Assign a unique ID
           name: String(name || ''), 
-          price: String(price || '') 
+          price: String(price || ''),
+          isLocal: false, // Indicate if it's a local addon
+          dbIndex: idx // Store the original index from parent data
         };
       });
       setAddonsList(newAddonsList);
+      setOriginalAddonCount(addonName.length); // Set original count from parent data
+      console.log('Setting original addon count:', addonName.length, 'for edit mode:', isEditMode);
+      console.log('Initial addons:', newAddonsList);
     } else if (!isEditMode) {
       // Reset addons for new items
       setAddonsList([]);
+      setOriginalAddonCount(0); // Reset original count for new items
+      console.log('Resetting addon count for new item');
     }
   }, [addonName, addonPrice, isEditMode]);
 
@@ -128,7 +228,7 @@ const AddMenuItemModal = ({
               <Input id="item-name" type="text" value={addName} onChange={e => setAddName(e.target.value)} required className="h-10 px-3 text-base w-full border border-gray-300 rounded mt-0.5" />
             </div>
             <div>
-              <Label className="block text-xs font-medium mb-1">Status</Label>
+              <Label className="block text-xs font-medium">Status</Label>
               <Select value={addStatus} onValueChange={setAddStatus}>
                 <SelectTrigger className="h-10 px-3 text-base w-full border border-gray-300 rounded mt-0.5">
                   <SelectValue placeholder="Select status" />
@@ -177,11 +277,11 @@ const AddMenuItemModal = ({
           {/* Collapse/Expand Button */}
           <button
             type="button"
-            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 rounded mt-1 mb-2 flex items-center justify-center gap-1 text-xs"
+            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 rounded mt-1 mb-2 flex items-center justify-center gap-1 text-xs h-10"
             onClick={() => setShowAdvanced(v => !v)}
           >
             Advance Options
-            <span>{showAdvanced ? '▲' : '▼'}</span>
+            <span className="text-lg">{showAdvanced ? <IoMdArrowDropup /> : <MdArrowDropDown />}</span>
           </button>
           {/* Collapsible Section */}
           {showAdvanced && (
@@ -189,16 +289,17 @@ const AddMenuItemModal = ({
               {/* Spicy Level */}
               <div>
                 <Label htmlFor="spicy-level" className="block text-xs font-medium">Spicy Level</Label>
-                <select
-                  value={addSpicyLevel}
-                  onChange={e => setAddSpicyLevel(e.target.value)}
-                  className="mt-0.5 block w-full border border-gray-300 bg-white text-gray-900 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500"
-                >
-                  <option value="Mild">Mild</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Hot">Hot</option>
-                  <option value="Extra Hot">Extra Hot</option>
-                </select>
+                <Select value={addSpicyLevel} onValueChange={setAddSpicyLevel}>
+                  <SelectTrigger className="h-10 px-3 text-base w-full border border-gray-300 rounded mt-0.5">
+                    <SelectValue placeholder="Select spicy level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mild">Mild</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Hot">Hot</SelectItem>
+                    <SelectItem value="Extra Hot">Extra Hot</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {/* Ingredients */}
               <div>
@@ -210,50 +311,71 @@ const AddMenuItemModal = ({
               <div>
                 <div className="mb-1">
                   <h3 className="text-base font-semibold text-gray-800 inline-block border-b-2 border-green-500 pb-0.5">Addons</h3>
+                  {isEditMode && originalAddonCount > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      <span className="inline-block w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
+                      Existing addons (from database) | 
+                      <span className="inline-block w-2 h-2 bg-blue-400 rounded-full ml-2 mr-1"></span>
+                      New addons (not saved yet)
+                    </p>
+                  )}
                 </div>
                 {addonsList.length > 0 && (
                   <div className="space-y-2">
-                    {addonsList.map((addon, idx) => (
-                      <div key={idx} className="flex items-center border border-gray-300 rounded-md p-2 bg-white shadow-sm">
-                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-1">
+                    {addonsList.map((addon, idx) => {
+                      const isLocalAddon = addon.isLocal;
+                      return (
+                        <div key={addon.id} className={`flex items-center ${isLocalAddon ? 'border-l-2 border-blue-400 pl-2' : ''}`}>
+                          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-1">
                           <div>
-                            <Label htmlFor={`addon-name-${idx}`} className="block text-xs font-medium text-gray-700 mb-0.5">Name*</Label>
-                            <Input id={`addon-name-${idx}`} type="text" placeholder="e.g., Extra Cheese" value={addon.name} onChange={e => {
-                                const newList = [...addonsList];
-                                newList[idx].name = e.target.value;
-                                setAddonsList(newList);
-                              }} className="h-10 px-3 text-base w-full border border-gray-300 rounded mt-0.5" />
+                            <Label htmlFor={`addon-name-${addon.id}`} className="block text-xs font-medium text-gray-700 mb-0.5">Name*</Label>
+                            <Input id={`addon-name-${addon.id}`} type="text" placeholder="e.g., Extra Cheese" value={addon.name} onChange={e => {
+                                setAddonsList(prev => prev.map(a => 
+                                  a.id === addon.id ? { ...a, name: e.target.value } : a
+                                ));
+                              }} className="h-10 px-3 text-base w-full border border-gray-300 rounded mt-0.5" required />
                           </div>
                           <div>
-                            <Label htmlFor={`addon-price-${idx}`} className="block text-xs font-medium text-gray-700 mb-0.5">Price*</Label>
-                            <Input id={`addon-price-${idx}`} type="number" placeholder="0.00" step="0.01" min="0" value={addon.price} onChange={e => {
-                                const newList = [...addonsList];
-                                newList[idx].price = e.target.value;
-                                setAddonsList(newList);
-                              }} className="h-10 px-3 text-base w-full border border-gray-300 rounded mt-0.5" />
+                            <Label htmlFor={`addon-price-${addon.id}`} className="block text-xs font-medium text-gray-700 mb-0.5">Price*</Label>
+                            <Input id={`addon-price-${addon.id}`} type="number" placeholder="0.00" step="0.01" min="0" value={addon.price} onChange={e => {
+                                setAddonsList(prev => prev.map(a => 
+                                  a.id === addon.id ? { ...a, price: e.target.value } : a
+                                ));
+                              }} className="h-10 px-3 text-base w-full border border-gray-300 rounded mt-0.5" required />
                           </div>
                         </div>
                         <button
                           type="button"
                           className="ml-2 text-red-500 hover:text-red-700 flex items-center justify-center p-0.5"
-                          onClick={() => setAddonsList(addonsList.filter((_, i) => i !== idx))}
-                          title="Remove addon"
+                          onClick={() => handleDeleteAddon(addon.id)}
+                          title={isLocalAddon ? "Remove addon from form" : "Delete addon from database"}
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 )}
                 <div className="text-gray-400 text-xs mt-1 mb-2">Like: Cheese, Olives, Butter etc..</div>
                 <button
                   type="button"
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-1 text-sm rounded-md mt-1 shadow-sm transition-all duration-200"
-                  onClick={() => setAddonsList([...addonsList, { name: '', price: '' }])}
+                  onClick={() => {
+                    const newId = `local-addon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    const newAddon = { 
+                      id: newId, 
+                      name: '', 
+                      price: '', 
+                      isLocal: true 
+                    };
+                    setAddonsList([...addonsList, newAddon]);
+                    console.log('Added new local addon:', newAddon);
+                  }}
                 >
-                  Add More Addons
+                  Add Addons
                 </button>
               </div>
                  {/* Description */}
@@ -264,7 +386,14 @@ const AddMenuItemModal = ({
             </div>
           )}
           {addError && <p className="text-red-500 text-xs">{addError}</p>}
-          <Button type="submit" disabled={addLoading} className="w-full mt-2">
+          <Button
+            type="submit"
+            disabled={addLoading}
+            style={{ backgroundColor: isEditMode ? '#f87019' : '#16a34a', border: 'none' }}
+            className={
+              `w-full mt-2 ${isEditMode ? 'hover:bg-blue-700' : 'hover:bg-green-700'} text-white font-semibold py-2 text-base rounded shadow`
+            }
+          >
             {addLoading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update Menu Item' : 'Add Menu Item')}
           </Button>
         </form>

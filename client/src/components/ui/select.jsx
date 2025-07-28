@@ -7,7 +7,7 @@ export function Select({ value, onValueChange, children, ...props }) {
       value={value}
       onChange={e => onValueChange(e.target.value)}
       {...props}
-      className={"block w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-base shadow-sm focus:border-orange-500 focus:ring-orange-500 " + (props.className || "")}
+      className={"block w-full mt-0.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-base shadow-sm focus:border-orange-500 focus:ring-orange-500 " + (props.className || "")}
     >
       {children}
     </select>

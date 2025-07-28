@@ -347,6 +347,13 @@ const MenuItemsPage = () => {
     }
   };
 
+  const handleAddonDeleted = (updatedItem) => {
+    // Update the editModalData with the updated item data
+    setEditModalData(updatedItem);
+    // Also update the items list
+    setItems((prev) => prev.map((i) => i._id === updatedItem._id ? updatedItem : i));
+  };
+
   return (
     <>
       <RestaurantNavbar />
@@ -495,6 +502,7 @@ const MenuItemsPage = () => {
             addonPrice={addAddonPrice}
             addLoading={addLoading}
             addError={addError}
+            menuId={menuId}
           />
         )}
         {deleteId && (
@@ -558,6 +566,9 @@ const MenuItemsPage = () => {
             addLoading={false}
             addError={null}
             isEditMode={true}
+            menuId={menuId}
+            itemId={editModalData._id}
+            onAddonDeleted={handleAddonDeleted}
           />
         )}
       </div>

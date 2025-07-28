@@ -24,4 +24,12 @@ router.delete("/:menuId/:itemId", menuitemController.deleteMenuItem);
 // Toggle is_available for a menu item
 router.patch('/:menuId/:itemId/toggle', menuitemController.toggleMenuItemAvailability);
 
+// Delete an addon from a menu item by index
+router.delete('/:menuId/:itemId/addons/:addonIndex', menuitemController.deleteAddonFromMenuItem);
+
+// DEBUG: Test route to verify routing and middleware
+router.get('/test', (req, res) => {
+  res.json({ ok: true, message: 'Test route hit' });
+});
+
 module.exports = router;

@@ -77,3 +77,25 @@ exports.toggleMenuItemAvailability = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Delete an addon from a menu item by addon index
+exports.deleteAddonFromMenuItem = async (req, res) => { 
+  try {
+    const { menuId, itemId, addonIndex } = req.params;
+    // Ensure addonIndex is a number
+    const idx = parseInt(addonIndex, 10);
+    if (isNaN(idx)) {
+      return res.status(400).json({ error: 'Invalid addon index' });
+    }
+    const item = await MenuItem.findOne({ _id: itemId, menu_id: menuId });
+    if (!item) return res.status(404).json({ error: 'Menu item not found' });
+    if (!Array.isArray(item.addons) || idx < 0 || idx >= item.addons.length) {
+      return res.status(404).json({ error: 'Addon not found' });
+    }
+    item.addons.splice(idx, 1);
+    await item.save();
+    res.json({ message: 'Addon deleted', item });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
